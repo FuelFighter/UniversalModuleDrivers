@@ -10,7 +10,13 @@
 #define UART_H_
 
 
+#define F_CPU 8000000UL
 
+#include <stdint.h>
+
+void uart_init();
+void uart_tx_char(char c);
+void uart_tx_str(char* str);
 
 
 #endif /* UART_H_ */
