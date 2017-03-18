@@ -277,9 +277,8 @@ bool can_send_message(CanMessage_t* message) {
 		CANPAGE = 0 << 4;
 
 		// Set ID
-		CANIDT4 = message->id & 0x00FF;
-		CANIDT2 = message->id & 0x00FF;
-		CANIDT1 = message->id >> 8;
+		CANIDT2 = message->id << 5;
+		CANIDT1 = message->id >> 3;
 
 		// Program data registers - auto increment
 		for (int i = 0; i < 8; i++) {
