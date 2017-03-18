@@ -8,15 +8,32 @@
 
 #include "can.h"
 
-/**************************************************************************************************
-*   CAN Reset message
-**************************************************************************************************/
+
+#define	CAN_FRAME_DATA_MAX_LENGTH	8
+#define	CAN_FRAME_MSG_LENGTH	3
+#define	CAN_IDE					0
+#define CAN_FRAME_SIZE			(CAN_FRAME_DATA_MAX_LENGTH + CAN_FRAME_MSG_LENGTH)
+
+
+typedef union {
+	struct {
+		uint32_t rb0		: 1;
+		uint32_t filler1	: 1;
+		uint32_t rbr		: 1;
+		uint32_t filler2	: 1;
+		uint32_t filler3	: 1;
+		uint32_t id			:11;
+		uint32_t length		: 4;
+		uint32_t filler4	: 4;
+		uint8_t	data[CAN_FRAME_DATA_MAX_LENGTH];
+	};
+	unsigned char		array[CAN_FRAME_MSG_LENGTH + CAN_FRAME_DATA_MAX_LENGTH];
+} can_frame;
+
+
 #define	NODE_ID	0xff
 #define	CRIS_ID 0x000
 
-/**************************************************************************************************
-*   CAN Baud Rate
-**************************************************************************************************/
 #define	CAN_BAUD_RATE		500000
 
 /**************************************************************************************************
@@ -92,63 +109,14 @@
 /**************************************************************************************************
 *   Internal Variables
 **************************************************************************************************/
-union can_frame tx_frames[TX_SIZE];
-union can_frame rx_frames[RX_SIZE];
+static can_frame tx_frames[TX_SIZE];
+static can_frame rx_frames[RX_SIZE];
 static unsigned char tx_off;
 static unsigned char tx_on;
 static unsigned char tx_busy;
 static unsigned char rx_off;
 static unsigned char rx_on;
 static volatile unsigned char reset;
-
-/**************************************************************************************************
-*   init_can(); - See 'can.h' Header file for Description
-**************************************************************************************************/
-void init_can(void)
-{
-	CANGCON = _BV(SWRES);							//Reset CAN controller
-
-	CANBT1 = (BRP_VALUE - 1) << 1;
-	CANBT2 = ((SJW_VALUE - 1) << 5) | ((PROP_SEG - 1) << 1);
-	CANBT3 = ((PHASE_SEG_2 - 1) << 4) | ((PHASE_SEG_1 - 1) << 1) | 1;
-
-	CANTIM = 0;
-	CANTTC = 0;
-
-	CANHPMOB = 0;
-	CANTCON = 0;
-
-	CANPAGE = 0 << 4;								//Switch to Mob 0 access
-	CANSTMOB = 0;
-	CANPAGE = 1 << 4;								//Switch to Mob 1 access
-	CANSTMOB = 0;
-	#if CAN_V==CAN2A
-	CANIDM4 = ACCPT_MASK_RTR << 2 | ACCPT_MASK_IDE;
-	CANIDM2 = (ACCPT_MASK_ID << 5) & 0xFF;
-	CANIDM1 = (ACCPT_MASK_ID >> 3) & 0xFF;
-	CANIDT4 = ACCPT_TAG_RTR << 2 | ACCPT_TAG_RB0;
-	CANIDT2 = (ACCPT_TAG_ID << 5) & 0xFF;
-	CANIDT1 = (ACCPT_TAG_ID >> 3) & 0xFF;
-	#elif CAN_V==CAN2B
-	CANIDM4 = ((ACCPT_MASK_ID << 3) & 0xFF) | ACCPT_MASK_RTR << 2 | ACCPT_MASK_IDE;
-	CANIDM3 = (ACCPT_MASK_ID >> 5) & 0xFF;
-	CANIDM2 = (ACCPT_MASK_ID >> 13) & 0xFF;
-	CANIDM1 = ((long)ACCPT_MASK_ID >> 21) & 0xFF;
-	CANIDT4 = ((ACCPT_TAG_ID << 3) & 0xFF) | ACCPT_TAG_RTR << 2 | ACCPT_TAG_RB1 << 1 | ACCPT_TAG_RB0;
-	CANIDT3 = (ACCPT_TAG_ID >> 5) & 0xFF;
-	CANIDT2 = (ACCPT_TAG_ID >> 13) & 0xFF;
-	CANIDT1 = ((long)ACCPT_TAG_ID >> 21) & 0xFF;
-	#endif
-
-	CANCDMOB = _BV(CONMOB1) | CAN_IDE;			//Set Mob 1 as RX and IDE
-
-	CANEN2 = _BV(ENMOB1) | _BV(ENMOB0);			//Enable Mob 0 and 1
-	CANIE2 = _BV(ENMOB1) | _BV(ENMOB0);			//Enable Mob 0 and 1 Interrupt
-	CANGIE = _BV(ENIT) | _BV(ENRX) | _BV(ENTX);	//Enable TX and RX interrupt
-	CANGCON = _BV(ENASTB);							//Enable CAN controller
-
-	reset = 0;
-}
 
 /**************************************************************************************************
 *   CAN ISR - See 'can.h' Header file for Description
@@ -161,26 +129,18 @@ ISR(CANIT_vect)
 	can_irq = CANSIT2;
 
 	// TX
-	if (can_irq & _BV(SIT0) && CANIE2 & _BV(ENMOB0)) {
+	if (can_irq & (1 << SIT0) && CANIE2 & (1 << ENMOB0)) {
 		//Select TX Mob (=Mob0)
 		CANPAGE = 0 << 4;
 		canstmod = CANSTMOB;
-		CANSTMOB&= ~_BV(TXOK);		//clear MB1, TX interrupt
+		CANSTMOB&= ~(1 << TXOK);		//clear MB1, TX interrupt
 		if (tx_on != tx_off) {
 			unsigned char pos;
 			pos = tx_off & (TX_SIZE-1);
 			//set ID
-			#if CAN_V==CAN2A
 			CANIDT4 = tx_frames[pos].array[0];
 			CANIDT2 = tx_frames[pos].array[0];
 			CANIDT1 = tx_frames[pos].array[1];
-			#elif CAN_V==CAN2B
-			CANIDT4 = tx_frames[pos].array[0];
-			CANIDT3 = tx_frames[pos].array[1];
-			CANIDT2 = tx_frames[pos].array[2];
-			CANIDT1 = tx_frames[pos].array[3];
-			#endif
-
 
 			//program data registers - auto increment CANMSG
 			CANMSG = tx_frames[pos].data[0];
@@ -200,7 +160,7 @@ ISR(CANIT_vect)
 		}
 	}
 	// RX
-	else if (can_irq & _BV(SIT1) && CANIE2 & _BV(ENMOB1)) {
+	else if (can_irq & (1 << SIT1) && CANIE2 & (1 << ENMOB1)) {
 		//Select RX Mob (=Mob1)
 		CANPAGE = 1 << 4;							//Switch to Mob 1 access
 		if (((rx_on - rx_off) & RX_ABS_MASK) < RX_SIZE) {
@@ -209,15 +169,8 @@ ISR(CANIT_vect)
 			//Read length
 			rx_frames[pos].length = CANCDMOB & 0x0F;
 			//Read ID
-			#if CAN_V==CAN2A
 			rx_frames[pos].array[0] = (CANIDT2 & 0xE0) | (CANIDT4 & 0x07);
 			rx_frames[pos].array[1] = CANIDT1;
-			#elif CAN_V==CAN2B
-			rx_frames[pos].array[0] = CANIDT4;
-			rx_frames[pos].array[1] = CANIDT3;
-			rx_frames[pos].array[2] = CANIDT2;
-			rx_frames[pos].array[3] = CANIDT1;
-			#endif
 
 			//read data registers - auto increment CANMSG
 			rx_frames[pos].data[0] = CANMSG;
@@ -247,95 +200,112 @@ ISR(CANIT_vect)
 	}
 }
 
-/**************************************************************************************************
-*   send_can_frame(); - See 'can.h' Header file for Description
-**************************************************************************************************/
-unsigned char send_can_frame(union can_frame *frame)
-{
-	unsigned char result;
 
-	result = 0;
-	CANGIE&= ~_BV(ENIT);
-	if (!tx_busy) {
-		CANPAGE = 0 << 4;							//Switch to Mob 0 access
-		//set ID
-		#if CAN_V==CAN2A
-		CANIDT4 = frame->array[0];
-		CANIDT2 = frame->array[0];
-		CANIDT1 = frame->array[1];
-		#elif CAN_V==CAN2B
-		CANIDT4 = frame->array[0];
-		CANIDT3 = frame->array[1];
-		CANIDT2 = frame->array[2];
-		CANIDT1 = frame->array[3];
-		#endif
-		//program data registers - auto increment
-		CANMSG = frame->data[0];
-		CANMSG = frame->data[1];
-		CANMSG = frame->data[2];
-		CANMSG = frame->data[3];
-		CANMSG = frame->data[4];
-		CANMSG = frame->data[5];
-		CANMSG = frame->data[6];
-		CANMSG = frame->data[7];
-		result = 1;
-		tx_busy = 1;
-		//set length, start send which restarts tx interrupt
-		CANCDMOB = _BV(CONMOB0) | CAN_IDE | frame->length;
-	}
-	else if (TX_SIZE - ((tx_on - tx_off) & TX_ABS_MASK)) {
-		result = 1;
-		unsigned char i;
-		for (i=0;i<CAN_FRAME_SIZE;i++) {
-			tx_frames[tx_on & (TX_SIZE-1)].array[i] = frame->array[i];
-		}
-		tx_on++;
-		result = 1;
-	}
-	CANGIE|= _BV(ENIT);
-	return result;
+void can_init(void) {
+	// Reset CAN controller
+	CANGCON = (1 << SWRES);
+
+	CANBT1 = (BRP_VALUE - 1) << 1;
+	CANBT2 = ((SJW_VALUE - 1) << 5) | ((PROP_SEG - 1) << 1);
+	CANBT3 = ((PHASE_SEG_2 - 1) << 4) | ((PHASE_SEG_1 - 1) << 1) | 1;
+
+	CANTIM = 0;
+	CANTTC = 0;
+
+	CANHPMOB = 0;
+	CANTCON = 0;
+
+	// Switch to Mob 0 access
+	CANPAGE = 0 << 4;
+	CANSTMOB = 0;
+	// Switch to Mob 1 access
+	CANPAGE = 1 << 4;
+	CANSTMOB = 0;
+	CANIDM4 = ACCPT_MASK_RTR << 2 | ACCPT_MASK_IDE;
+	CANIDM2 = (ACCPT_MASK_ID << 5) & 0xFF;
+	CANIDM1 = (ACCPT_MASK_ID >> 3) & 0xFF;
+	CANIDT4 = ACCPT_TAG_RTR << 2 | ACCPT_TAG_RB0;
+	CANIDT2 = (ACCPT_TAG_ID << 5) & 0xFF;
+	CANIDT1 = (ACCPT_TAG_ID >> 3) & 0xFF;
+
+	// Set Mob 1 as RX and IDE
+	CANCDMOB = (1 << CONMOB1) | CAN_IDE;
+	// Enable Mob 0 and 1
+	CANEN2 = (1 << ENMOB1) | (1 << ENMOB0);
+	// Enable Mob 0 and 1 Interrupt
+	CANIE2 = (1 << ENMOB1) | (1 << ENMOB0);
+	// Enable TX and RX interrupt
+	CANGIE = (1 << ENIT) | (1 << ENRX) | (1 << ENTX);	
+
+	// Enable CAN controller
+	CANGCON = (1 << ENASTB);
+
+	reset = 0;
 }
 
-/**************************************************************************************************
-*   read_can_frame(); - See 'can.h' Header file for Description
-**************************************************************************************************/
-union can_frame *read_can_frame(void)
-{
-	return &rx_frames[(rx_off & (RX_SIZE-1))];
-}
+bool can_read_message(CanMessage_t* message) {
+	// Check if there is a new message
+	if (rx_on == rx_off) {
+		return false;
+	}
 
-/**************************************************************************************************
-*   next_can_frame(); - See 'can.h' Header file for Description
-**************************************************************************************************/
-void next_can_frame(void)
-{
+	// Read the can frame
+	can_frame* frame = &rx_frames[(rx_off & (RX_SIZE - 1))];
+
+	message->id = frame->id;
+	message->length = frame->length;
+	for (int i = 0; i < message->length; i++) {
+		message->data[i] = frame->data[i];
+	}
+
+	// Advance to next can message
 	if (rx_on != rx_off) {
 		rx_off++;
 	}
+
+	return true;
 }
 
-/**************************************************************************************************
-*   new_can_frame(); - See 'can.h' Header file for Description
-**************************************************************************************************/
-unsigned char new_can_frame(void)
-{
-	unsigned char result;
+bool can_send_message(CanMessage_t* message) {
+	uint8_t result;
 
-	if (rx_on != rx_off)							//check for new data on rx pdu buffer
-	result = 1;
-	else
 	result = 0;
+	CANGIE &= ~(1 << ENIT);
+
+	if (!tx_busy) {
+		// Switch to Mob 0 access
+		CANPAGE = 0 << 4;
+
+		// Set ID
+		CANIDT4 = message->id & 0x00FF;
+		CANIDT2 = message->id & 0x00FF;
+		CANIDT1 = message->id >> 8;
+
+		// Program data registers - auto increment
+		for (int i = 0; i < 8; i++) {
+			CANMSG = message->data[i];
+		}
+		
+		result = 1;
+		tx_busy = 1;
+
+		// Set length, start send which restarts tx interrupt
+		CANCDMOB = (1 << CONMOB0) | CAN_IDE | message->length;
+	}
+	else if (TX_SIZE - ((tx_on - tx_off) & TX_ABS_MASK)) {
+		result = 1;
+
+		tx_frames[tx_on & (TX_SIZE-1)].id = message->id;
+		tx_frames[tx_on & (TX_SIZE-1)].length = message->length;
+		
+		for (int i = 0; i < 8; i++) {
+			tx_frames[tx_on & (TX_SIZE-1)].data[i] = message->data[i];
+		}
+
+		tx_on++;
+		result = 1;
+	}
+
+	CANGIE |= (1 << ENIT);
 	return result;
-}
-
-
-void send_can_message(int id, unsigned char data, union can_frame* msg){
-
-
-	msg->id = id;
-	msg->length = 1;
-	msg->data[0] = data;
-
-	send_can_frame(msg);
-
 }
