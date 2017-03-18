@@ -12,7 +12,6 @@
 
 #define F_CPU 8000000UL
 
-#include <stdint.h>
 
 void uart_init();
 void uart_tx_char(char c);

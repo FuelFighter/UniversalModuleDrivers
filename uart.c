@@ -7,6 +7,7 @@
 
 #include "uart.h"
 #include <avr/io.h>
+#include <stdint.h>
 
 void uart_init()
 {
