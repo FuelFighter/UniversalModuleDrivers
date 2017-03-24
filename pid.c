@@ -4,6 +4,7 @@
  * Created: 24.03.2017 13:52:07
  *  Author: Jorgen Jackwitz
  */ 
+#include <avr/io.h>
 
 #define TIMECONSTANT 1000000
 #define GAINCONSTANT 1000
