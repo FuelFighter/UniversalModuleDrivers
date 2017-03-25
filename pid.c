@@ -5,24 +5,25 @@
  *  Author: Jorgen Jackwitz
  */ 
 #include <avr/io.h>
+#include "usbdb.h"
 
 #define TIMECONSTANT 1000000
 #define GAINCONSTANT 1000
 
-static int16_t lastError = 0;
-static int16_t totError = 0;
-static int16_t intError = 0;
-static int32_t derError = 0;
-
-static int16_t propGain = 0;
-static int16_t intGain = 0;
-static int16_t derGain = 0;
-
-static int32_t timeError = 0;
-static int32_t timeStep	= 0;
-static int16_t Kp = 0;
-static int16_t Kd = 0;
-static int16_t Ki = 0;
+static int lastError = 0;
+static int totError = 0;
+static int intError = 0;
+static int derError = 0;
+	   
+static int propGain = 0;
+static int intGain = 0;
+static int derGain = 0;
+	 
+static int timeError = 0;
+static float timeStep	= 0;
+static float Kp = 0;
+static float Kd = 0;
+static float Ki = 0;
 
 
 /*
@@ -33,27 +34,46 @@ As long as the setpoint and currentValue are in the same range the pid can calcu
 
 
 void pid_init(float t, float p, float d, float i){
-	timeStep = t * TIMECONSTANT;
-	Kp = p * GAINCONSTANT;
-	Kd = d * GAINCONSTANT;
-	Ki = i * GAINCONSTANT;
+	timeStep = t;
+	Kp = p;
+	Kd = d;
+	Ki = i;
 }
 
-int32_t pid(int16_t currentValue, int16_t setPoint){
+int32_t pid(uint16_t currentValue, uint16_t setPoint){
+
+		
+		int output = 0;
+		printf("currentValue: %u \t",currentValue);
+		printf("setPoint: %u \t",setPoint);
 		
 		totError = setPoint - currentValue;
 		
-		propGain = (totError * Kp)/GAINCONSTANT;
+		printf("totError: %d \t", totError);
 		
-		timeError = (totError*TIMECONSTANT)/timeStep;
+		propGain = totError * Kp;
 		
-		intError = intError + timeError;
+		printf("propGain: %d \t",propGain);
 		
-		intGain = (intError * Ki)/GAINCONSTANT;
+		intError = intError + totError*timeStep;
 		
-		derError = ((totError - lastError)*TIMECONSTANT)/timeStep;
+		printf("intError: %d \t",intError);
 		
-		derGain = (derError * Kd)/GAINCONSTANT;
+		intGain = intError * Ki;
 		
-		return(propGain + intGain + derGain);
+		printf("intGain: %d \t",intGain);
+		
+		derError = (totError - lastError)/timeStep;
+		
+		lastError = totError;
+		
+		derGain = derError * Kd;
+		
+		printf("derGain: %d \t",derGain);
+				
+		output = propGain + intGain + derGain;
+		
+		printf("output: %d \n", output);
+		
+		return output;
 }
