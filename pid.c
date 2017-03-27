@@ -19,7 +19,7 @@ static int propGain = 0;
 static int intGain = 0;
 static int derGain = 0;
 	 
-static int timeError = 0;
+//static int timeError = 0;
 static float timeStep	= 0;
 static float Kp = 0;
 static float Kd = 0;
