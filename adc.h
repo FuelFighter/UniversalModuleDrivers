@@ -8,6 +8,8 @@
 #ifndef ADC_H_
 #define ADC_H_
 
+#include <stdint.h>
+
 typedef enum {
 	CH_ADC0 = 0b00000,
 	CH_ADC1 = 0b00001,
