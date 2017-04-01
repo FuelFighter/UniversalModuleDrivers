@@ -5,6 +5,7 @@
  *  Author: Ultrawack
  */ 
 #include "usbdb.h"
+#include <stdlib.h>
 
 void usbdbg_init()
 {
@@ -15,15 +16,9 @@ void usbdbg_init()
 	fdevopen(usbdbg_tx_char, NULL);
 }
 
-/*
-void usbdbg_tx_str(char* str)
-{
-	for(char* ptr = str; *ptr; ptr++)
-	usbdbg_tx_char(*ptr);
-}*/
-
-void usbdbg_tx_char(char c, FILE* stream)
+int usbdbg_tx_char(char c, FILE* stream)
 {
 	while (!(UCSR0A & (1 << UDRE0))) { }; // Wait until data register is empty
 	UDR0 = c;
+	return 1;
 }
