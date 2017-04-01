@@ -22,22 +22,6 @@ void adc_init(void){
 	ADCSRA |= (1<<ADEN);
 }
 
-void adc_interrupt_init(void){
-	ADCSRA |= (1<<ADIE);
-}
-
-void adc_enable(void){
-	ADCSRA |= (1<<ADEN);
-}
-
-void start_conv(void){
-	ADCSRA |= (1<<ADSC);
-}
-
-void adc_disable(void){
-	ADCSRA &= ~(1<<ADEN);
-}
-
 uint16_t adc_read(adc_channel_t channel){
 	
 	//Setting channel and type of reading, see enum in adc.h 

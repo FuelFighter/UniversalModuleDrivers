@@ -43,11 +43,9 @@ typedef enum {
 	CH_CONST_0V = 0b11111
 } adc_channel_t;
 
+
 void adc_init(void);
-void adc_interrupt_init(void);
-void adc_enable(void);
-void adc_disable(void);
-void start_conv(void);
+
 uint16_t adc_read(adc_channel_t channel);
 
 #endif /* ADC_H_ */
