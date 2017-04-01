@@ -11,45 +11,44 @@
 
 
 void adc_init(void){
-	clear_bit(DDRF, DDF0);
+	
 	/* Voltage ref AVcc with external capacitor on AREF pin */
-	set_bit(ADMUX, REFS0);
+	ADMUX |= (1<<REFS0);
+	
 	/* Select prescaler to 64 --> conversion f= 125kHz */
-	set_bit(ADCSRA, ADPS2);
-	set_bit(ADCSRA, ADPS1);
+	ADCSRA |= (1<<ADPS2)|(1<<ADPS2);
+	
 	/* Enable the ADC */
-	set_bit(ADCSRA, ADEN);
-	/* Turn on the ADC Conversion Complete Interrupt */
-	//set_bit(ADCSRA, ADIE);	
+	ADCSRA |= (1<<ADEN);
+}
+
+void adc_interrupt_init(void){
+	ADCSRA |= (1<<ADIE);
 }
 
 void adc_enable(void){
-	//Enables ADC, turn off before go into sleep mode
-	set_bit(ADCSRA, ADEN);
-	
+	ADCSRA |= (1<<ADEN);
 }
 
 void start_conv(void){
-	set_bit(ADCSRA, ADSC);
+	ADCSRA |= (1<<ADSC);
 }
 
 void adc_disable(void){
-	clear_bit(ADCSRA, ADEN);
+	ADCSRA &= ~(1<<ADEN);
 }
 
-uint8_t adc_read(uint8_t channel){
+uint16_t adc_read(adc_channel_t channel){
 	
+	//Setting channel and type of reading, see enum in adc.h 
+	ADMUX &= 0b11100000;
+	ADMUX |= (int8_t)channel;	
 		
 	/* Start the conversion */
-	set_bit(ADCSRA, ADSC);
-	/* Wait for the conversion to complete */
-	while(test_bit(ADCSRA, ADSC));
+	ADCSRA |= (1<<ADSC);
 	
-	unsigned int full_value = 0;
-	full_value = ADC;
-	if(full_value > 255)
-		full_value = 255;
-	else if(full_value < 0)
-		full_value = 0;
-	return full_value;
+	/* Wait for the conversion to complete */
+	while(ADCSRA & (1<<ADSC));
+	
+	return ADC;
 }
