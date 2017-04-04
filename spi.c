@@ -15,7 +15,7 @@
 
 void spi_init(spi_prescale_t clock_prescale) {
 	// Set MOSI, SS, and SCK output, all others input
-	DDR_SPI = (1 << PIN_MOSI) | (1 << PIN_SCK) | (1 << PIN_SS);
+	DDR_SPI |= (1 << PIN_MOSI) | (1 << PIN_SCK) | (1 << PIN_SS);
 	
 	uint8_t SPI2X_val = (uint8_t)((clock_prescale >> 2) & 0b001);
 	uint8_t SPR1_val = (uint8_t)((clock_prescale >> 1) & 0b001);
