@@ -17,5 +17,6 @@
 void usbdbg_init();
 
 int usbdbg_tx_char(char c, FILE* stream);
+char usbdbg_rx_char();
 
 #endif /* USBDB_H_ */
