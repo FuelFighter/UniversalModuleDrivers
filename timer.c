@@ -10,6 +10,7 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "usbdb.h"
 
 #define NUMBER_OF_TIMERS 8
 
@@ -40,6 +41,8 @@ uint16_t timer_elapsed_ms(timer_t timer) {
 
 ISR(TIMER0_OVF_vect) {
 	for (int t = 0; t < NUMBER_OF_TIMERS; t++) {
-		if (timer_enabled[t])	elapsed_microseconds[t] += (1000000ULL * 256 * 1024) / F_CPU;
+		if (timer_enabled[t]){
+			elapsed_microseconds[t] += (1000000ULL * 256 * 1024) / F_CPU;
+		}
 	}
 }
