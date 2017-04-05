@@ -3,15 +3,19 @@
 #include <avr/wdt.h>
 #include <avr/boot.h>
 
-#define F_CPU 8000000UL
 #include <util/delay.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include "can.h"
 
+#ifndef F_CPU
+#error F_CPU not defined. Define it in project settings.
+#endif
 
 #define	CAN_FRAME_DATA_MAX_LENGTH	8
 #define	CAN_FRAME_MSG_LENGTH	3
-#define	CAN_IDE					0
 #define CAN_FRAME_SIZE			(CAN_FRAME_DATA_MAX_LENGTH + CAN_FRAME_MSG_LENGTH)
 
 
@@ -46,8 +50,6 @@ typedef union {
 /**************************************************************************************************
 *   Acceptance Filtering,
 **************************************************************************************************/
-#define ACCPT_MASK_ID	0//0x7FF //sto på 0x100
-#define ACCPT_TAG_ID	0//0x001
 #define ACCPT_MASK_RTR	0
 #define ACCPT_TAG_RTR	0
 #define ACCPT_MASK_IDE	0
@@ -59,8 +61,8 @@ typedef union {
 * 	- 1 can frame ~ 11 bytes for CAN2A and 13 bytes for CAN2B
 * 	- RX_SIZE * 11 or 13 is aprox rx buffer memory size.
 **************************************************************************************************/
-#define TX_SIZE			8			//Transmit Buffer Size, can be 2^n where n=0 to 6
-#define RX_SIZE			8			//Receiver Buffer Size, can be 2^n where n=0 to 6
+#define TX_SIZE			16			//Transmit Buffer Size, can be 2^n where n=0 to 6
+#define RX_SIZE			16			//Receiver Buffer Size, can be 2^n where n=0 to 6
 
 /**************************************************************************************************
 *   Pre-Processor ONLY! - Do not edit!
@@ -88,16 +90,20 @@ typedef union {
 #if (BRP_VALUE > 0x3F)
 #warning CAN Baud Rate too LOW
 #endif
+
 #if (PHASE_SEG_2 < 2)
 #warning Propagation time is too long!
 #endif
+
 #if (F_CPU%CAN_BAUD_RATE)
 #warning Clock (F_CPU) is not a multipe of CAN Baud rate!
 #endif
+
 #if !(TX_SIZE==64 || TX_SIZE==32 || TX_SIZE==16 || TX_SIZE==8 \
 || TX_SIZE==4 || TX_SIZE==2 || TX_SIZE==1)
 #warning:Wrong CAN TX Buffer Size
 #endif
+
 #if !(RX_SIZE==64 || RX_SIZE==32 || RX_SIZE==16 || RX_SIZE==8 \
 || RX_SIZE==4 || RX_SIZE==2 || RX_SIZE==1)
 #warning:Wrong CAN RX Buffer Size
@@ -111,29 +117,28 @@ typedef union {
 **************************************************************************************************/
 static can_frame tx_frames[TX_SIZE];
 static can_frame rx_frames[RX_SIZE];
-static unsigned char tx_off;
-static unsigned char tx_on;
-static unsigned char tx_busy;
-static unsigned char rx_off;
-static unsigned char rx_on;
-static volatile unsigned char reset;
+static uint8_t tx_off;
+static uint8_t tx_on;
+static uint8_t tx_busy;
+static uint8_t rx_off;
+static uint8_t rx_on;
+static volatile uint8_t reset;
 
 /**************************************************************************************************
 *   CAN ISR - See 'can.h' Header file for Description
 **************************************************************************************************/
 ISR(CANIT_vect)
 {
-	unsigned char can_irq;
-	volatile unsigned char canstmod;
+	volatile uint8_t mob_status;
 
-	can_irq = CANSIT2;
+	uint8_t mob_interrupts = CANSIT2;
 
 	// TX
-	if (can_irq & (1 << SIT0) && CANIE2 & (1 << ENMOB0)) {
-		//Select TX Mob (=Mob0)
-		CANPAGE = 0 << 4;
-		canstmod = CANSTMOB;
-		CANSTMOB&= ~(1 << TXOK);		//clear MB1, TX interrupt
+	if ((mob_interrupts & (1 << SIT0)) && (CANIE2 & (1 << ENMOB0))) {
+		CANPAGE = (0x0 << MOBNB0); //Select TX Mob (Mob0)
+		mob_status = CANSTMOB;
+		CANSTMOB &= ~(1 << TXOK); //clear MB1, TX interrupt
+
 		if (tx_on != tx_off) {
 			unsigned char pos;
 			pos = tx_off & (TX_SIZE-1);
@@ -151,18 +156,18 @@ ISR(CANIT_vect)
 			CANMSG = tx_frames[pos].data[5];
 			CANMSG = tx_frames[pos].data[6];
 			CANMSG = tx_frames[pos].data[7];
+
 			//set length and request send
-			CANCDMOB = _BV(CONMOB0) | CAN_IDE | tx_frames[pos].length;
+			CANCDMOB = (1 << CONMOB0) | tx_frames[pos].length;
 			tx_off++;
-		}
-		else {
+		} else {
 			tx_busy = 0;
 		}
 	}
 	// RX
-	else if (can_irq & (1 << SIT1) && CANIE2 & (1 << ENMOB1)) {
-		//Select RX Mob (=Mob1)
-		CANPAGE = 1 << 4;							//Switch to Mob 1 access
+	else if ((mob_interrupts & (1 << SIT1)) && (CANIE2 & (1 << ENMOB1))) {
+		//Select RX Mob (Mob1)
+		CANPAGE = (0x1 << MOBNB0);
 		if (((rx_on - rx_off) & RX_ABS_MASK) < RX_SIZE) {
 			unsigned char pos;
 			pos = rx_on & (RX_SIZE-1);
@@ -183,25 +188,25 @@ ISR(CANIT_vect)
 			rx_frames[pos].data[7] = CANMSG;
 			rx_on++;
 
-			//reset if reset can message
+			// Reset if reset can message
 			if(rx_frames[pos].id == 0x000 && rx_frames[pos].data[0] == 0x03){
 				wdt_enable(WDTO_15MS);
 				while(1); //wait for watchdog
 			}
-
-
 		}
-		//clear irq
-		canstmod = CANSTMOB;
-		(void)canstmod;
-		CANSTMOB&= ~_BV(RXOK);
-		CANCDMOB = _BV(CONMOB1) | CAN_IDE;			//Set Mob 1 as RX and IDE
+
+		// Clear irq
+		mob_status = CANSTMOB;
+		(void)mob_status;
+
+		CANSTMOB &= ~(1 << RXOK);
+		CANCDMOB = (1 << CONMOB1);			//Set Mob 1 as RX
 
 	}
 }
 
 
-void can_init(void) {
+void can_init(uint16_t accept_mask_id, uint16_t accept_tag_id) {
 	// Reset CAN controller
 	CANGCON = (1 << SWRES);
 
@@ -216,20 +221,22 @@ void can_init(void) {
 	CANTCON = 0;
 
 	// Switch to Mob 0 access
-	CANPAGE = 0 << 4;
+	CANPAGE = (0x0 << MOBNB0);
 	CANSTMOB = 0;
-	// Switch to Mob 1 access
-	CANPAGE = 1 << 4;
-	CANSTMOB = 0;
-	CANIDM4 = ACCPT_MASK_RTR << 2 | ACCPT_MASK_IDE;
-	CANIDM2 = (ACCPT_MASK_ID << 5) & 0xFF;
-	CANIDM1 = (ACCPT_MASK_ID >> 3) & 0xFF;
-	CANIDT4 = ACCPT_TAG_RTR << 2 | ACCPT_TAG_RB0;
-	CANIDT2 = (ACCPT_TAG_ID << 5) & 0xFF;
-	CANIDT1 = (ACCPT_TAG_ID >> 3) & 0xFF;
 
-	// Set Mob 1 as RX and IDE
-	CANCDMOB = (1 << CONMOB1) | CAN_IDE;
+	// Switch to Mob 1 access
+	CANPAGE = (0x1 << MOBNB0);
+	CANSTMOB = 0;
+	CANIDM4 = 0;
+	CANIDM2 = (accept_mask_id << 5) & 0xFF;
+	CANIDM1 = (accept_mask_id >> 3) & 0xFF;
+	CANIDT4 = 0;
+	CANIDT2 = (accept_tag_id << 5) & 0xFF;
+	CANIDT1 = (accept_tag_id >> 3) & 0xFF;
+
+	// Set Mob 1 as RX
+	CANCDMOB = (1 << CONMOB1);
+
 	// Enable Mob 0 and 1
 	CANEN2 = (1 << ENMOB1) | (1 << ENMOB0);
 	// Enable Mob 0 and 1 Interrupt
@@ -243,7 +250,7 @@ void can_init(void) {
 	reset = 0;
 }
 
-bool can_read_message(CanMessage_t* message) {
+bool can_read_message_if_new(CanMessage_t* message) {
 	// Check if there is a new message
 	if (rx_on == rx_off) {
 		return false;
@@ -267,9 +274,8 @@ bool can_read_message(CanMessage_t* message) {
 }
 
 bool can_send_message(CanMessage_t* message) {
-	uint8_t result;
+	bool result = false;
 
-	result = 0;
 	CANGIE &= ~(1 << ENIT);
 
 	if (!tx_busy) {
@@ -285,26 +291,27 @@ bool can_send_message(CanMessage_t* message) {
 			CANMSG = message->data[i];
 		}
 		
-		result = 1;
+		result = true;
 		tx_busy = 1;
 
 		// Set length, start send which restarts tx interrupt
-		CANCDMOB = (1 << CONMOB0) | CAN_IDE | message->length;
+		CANCDMOB = (1 << CONMOB0) | message->length;
 	}
 	else if (TX_SIZE - ((tx_on - tx_off) & TX_ABS_MASK)) {
-		result = 1;
-
+		// Copy data into TX buffer
 		tx_frames[tx_on & (TX_SIZE-1)].id = message->id;
 		tx_frames[tx_on & (TX_SIZE-1)].length = message->length;
-		
-		for (int i = 0; i < 8; i++) {
+		memcpy(tx_frames[tx_on & (TX_SIZE-1)].data, message->data, CAN_FRAME_DATA_MAX_LENGTH);
+
+		/*for (int i = 0; i < 8; i++) {
 			tx_frames[tx_on & (TX_SIZE-1)].data[i] = message->data[i];
-		}
+		}*/
 
 		tx_on++;
-		result = 1;
+		result = true;
 	}
 
 	CANGIE |= (1 << ENIT);
+
 	return result;
 }

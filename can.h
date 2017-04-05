@@ -18,9 +18,9 @@ typedef struct {
 	uint8_t data[8];
 } CanMessage_t;
 
-void can_init(void);
+void can_init(uint16_t accept_mask_id, uint16_t accept_tag_id);
 
-bool can_read_message(CanMessage_t* message);
+bool can_read_message_if_new(CanMessage_t* message);
 
 bool can_send_message(CanMessage_t* message);
 
