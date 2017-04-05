@@ -21,8 +21,8 @@ void timer_init() {
 	TCCR0A = 0;
 	// Enable overflow interrupt
 	TIMSK0 = (1 << TOIE0);
-	// Enable timer with CLK_io/1024
-	TCCR0A |= 5;
+	// Enable timer with CLK_io/256
+	TCCR0A |= 4;
 }
 
 void timer_start(timer_t timer) {
@@ -40,6 +40,6 @@ uint16_t timer_elapsed_ms(timer_t timer) {
 
 ISR(TIMER0_OVF_vect) {
 	for (int t = 0; t < NUMBER_OF_TIMERS; t++) {
-		if (timer_enabled[t])	elapsed_microseconds[t] += (1000000ULL * 256 * 1024) / F_CPU;
+		if (timer_enabled[t])	elapsed_microseconds[t] += (1000000ULL * 256 * 256) / F_CPU;
 	}
 }
