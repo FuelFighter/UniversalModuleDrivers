@@ -10,6 +10,7 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 #include <stdbool.h>
+#define F_CPU 8000000UL
 
 #define NUMBER_OF_TIMERS 8
 
