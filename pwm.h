@@ -24,8 +24,8 @@ typedef enum {
 }pwmTimer_t;
 
 typedef enum {
-	DISABLE = 0,
-	SCALE_1 = 1,
+	DISABLE,
+	SCALE_1,
 	SCALE_8,
 	SCALE_32_T2_ONLY,
 	SCALE_64,
@@ -34,9 +34,13 @@ typedef enum {
 	SCALE_1024 
 }pwmPrescale_t;
 
+// FAST PWM - mode for t2 and t3, 1x prescale, top at 0xFF for t3 and 0xFF t2
 void pwm_init(void);
+
 void pwm_set_duty_cycle(pwmPin_t pin, uint16_t dutyCycle);
-void pwm_set_top(pwmPin_t pin, uint16_t top);
+
+void pwm_set_top_t3(uint16_t top);
+
 void pwm_set_prescale(pwmPrescale_t scale, pwmTimer_t timer);
 
 

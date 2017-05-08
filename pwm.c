@@ -19,11 +19,11 @@ void pwm_init(void){
 	PORTB &= ~(1<<PB4);
 	DDRB |= (1<<PB4);
 	
-	//fast pwm, mode 14, TOP at ICR
+	//Timer 3 fast pwm, mode 14, TOP at ICR
 	TCCR3B |= (1<<WGM33)|(1<<WGM32)|(1<<WGM31);
 	TCCR3B &= ~((1<<WGM31)|(1<<WGM30));
 	
-	//fast pwm, mode 3, Top at 0xFF
+	//Timer 2 fast pwm, mode 3, Top at 0xFF
 	TCCR2A |= (1<<WGM21)|(1<<WGM20);
 	
 
