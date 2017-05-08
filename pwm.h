@@ -12,15 +12,15 @@
 
 
 typedef enum {
-	PWM_PB4 = PB4,
-	PWM_PE3 = PE3,
-	PWM_PE4 = PE4,
-	PWM_PE5 = PE5,	
+	PWM_PB4,
+	PWM_PE3,
+	PWM_PE4,
+	PWM_PE5
 }pwmPin_t;
 
 typedef enum {
-	PWM_T2;
-	PWM_T3;
+	PWM_T2,
+	PWM_T3
 }pwmTimer_t;
 
 typedef enum {

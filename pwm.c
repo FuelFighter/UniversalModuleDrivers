@@ -5,19 +5,10 @@
  *  Author: Jørgen Jackwitz
  */ 
 
+#include "pwm.h"
+
 #include <avr/interrupt.h>
 #include <avr/io.h>
-
-//sets bit "bit" in register "reg"
-#define set_bit(reg, bit)		(reg |= (1<<bit))
-//same as set_bit only clears all other bits
-#define set_bit_ex(reg, bit)	(reg = (1<<bit))
-//clears bit "bit" in register "reg"
-#define clear_bit(reg, bit)		(reg &=~ (1<<bit))
-//tests if bit "bit" is set in register "reg"
-#define test_bit(reg, bit)		(reg & (1<<bit))
-//toggles bit "bit" in register "reg"
-#define toggle_bit(reg, bit)	(reg ^= (1<<bit))
 
 void pwm_init(void){
 	
@@ -26,7 +17,7 @@ void pwm_init(void){
 	DDRE |= (1<<PE3)|(1<<PE4)|(1<<PE5);
 	
 	PORTB &= ~(1<<PB4);
-	DDRB |= (1<<PB4)
+	DDRB |= (1<<PB4);
 	
 	//fast pwm, mode 14, TOP at ICR
 	TCCR3B |= (1<<WGM33)|(1<<WGM32)|(1<<WGM31);
@@ -38,10 +29,10 @@ void pwm_init(void){
 
 	// Set low on compare match for 3A&B
 	TCCR3A |= (1<<COM3A1)|(1<<COM3B1);
-	TCCR3A &= ~((1<<COM3A0)|(1<<COM3B0))
+	TCCR3A &= ~((1<<COM3A0)|(1<<COM3B0));
 	
-	TCCR2A |= (1<<COM2A1)
-	TCCR2A &=  ~((1<<COM2A0))
+	TCCR2A |= (1<<COM2A1);
+	TCCR2A &=  ~((1<<COM2A0));
 	
 	//Set prescale clk/1 for timer 3
 	
@@ -80,7 +71,7 @@ void pwm_set_duty_cycle(pwmPin_t pin, uint16_t dutyCycle)
 
 void pwm_set_top_t3(uint16_t top)
 {
-		ICR3 = (top & 0xFFFF);
+	ICR3 = (top & 0xFFFF);
 }
 
 void pwm_set_prescale(pwmPrescale_t scale, pwmTimer_t timer)
