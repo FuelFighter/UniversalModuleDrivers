@@ -262,7 +262,7 @@ bool can_read_message_if_new(CanMessage_t* message) {
 	message->id = frame->id;
 	message->length = frame->length;
 	for (int i = 0; i < message->length; i++) {
-		message->data[i] = frame->data[i];
+		message->data.u8[i] = frame->data[i];
 	}
 
 	// Advance to next can message
@@ -288,7 +288,7 @@ bool can_send_message(CanMessage_t* message) {
 
 		// Program data registers - auto increment
 		for (int i = 0; i < 8; i++) {
-			CANMSG = message->data[i];
+			CANMSG = message->data.u8[i];
 		}
 		
 		result = true;
@@ -301,10 +301,10 @@ bool can_send_message(CanMessage_t* message) {
 		// Copy data into TX buffer
 		tx_frames[tx_on & (TX_SIZE-1)].id = message->id;
 		tx_frames[tx_on & (TX_SIZE-1)].length = message->length;
-		memcpy(tx_frames[tx_on & (TX_SIZE-1)].data, message->data, CAN_FRAME_DATA_MAX_LENGTH);
+		memcpy(tx_frames[tx_on & (TX_SIZE-1)].data, &message->data, CAN_FRAME_DATA_MAX_LENGTH);
 
 		/*for (int i = 0; i < 8; i++) {
-			tx_frames[tx_on & (TX_SIZE-1)].data[i] = message->data[i];
+			tx_frames[tx_on & (TX_SIZE-1)].data[i] = message->data.u8[i];
 		}*/
 
 		tx_on++;

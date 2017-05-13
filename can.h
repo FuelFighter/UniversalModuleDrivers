@@ -28,10 +28,41 @@
 #define FRONT_LIGHTS_CAN_ID		0x470
 #define BACK_LIGHTS_CAN_ID		0x480
 
+typedef union {
+	// Integers and fixed point numbers
+	// Example: can_message.data.u8[2] = 0xFF;
+	uint8_t u8[8];
+	int8_t i8[8];
+	uint16_t u16[4];
+	int16_t i16[4];
+	uint32_t u32[2];
+	int32_t i32[2];
+	uint64_t u64;
+	int64_t i64;
+	
+	// Floating point numbers
+	// Example: can_message.data.f32[1] = 3.1415926535;
+	float f32[2];
+	double f64;
+
+	// Bitfields
+	// Example: can_message.data.bitfield[3].b6 = true;
+	struct {
+		uint8_t b0 : 1;
+		uint8_t b1 : 1;
+		uint8_t b2 : 1;
+		uint8_t b3 : 1;
+		uint8_t b4 : 1;
+		uint8_t b5 : 1;
+		uint8_t b6 : 1;
+		uint8_t b7 : 1;
+	} bitfield[8];
+} CanData_t;
+
 typedef struct {
 	uint16_t id;
 	uint8_t length;
-	uint8_t data[8];
+	CanData_t data;
 } CanMessage_t;
 
 void can_init(uint16_t accept_mask_id, uint16_t accept_tag_id);
