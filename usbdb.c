@@ -9,10 +9,10 @@
 
 void usbdbg_init()
 {
-	const uint32_t baud_rate = 250000;
+	const uint32_t baud_rate = 500000;
 	UBRR0 = (F_CPU / 16) / baud_rate - 1;
 	UCSR0C = (3 << UCSZ0);	// 8 bit transfer
-	UCSR0B |= (1 << TXEN0)|(1<<RXEN0)|(1<<RXCIE0); // Enable receive and transmit
+	UCSR0B |= (1 << TXEN0); // Enable transmit
 	
 	fdevopen(usbdbg_tx_char, NULL);
 }
@@ -23,10 +23,3 @@ int usbdbg_tx_char(char c, FILE* stream)
 	UDR0 = c;
 	return 1;
 }
-
-char usbdbg_rx_char()
-{
-	return UDR0;
-} 
-
-
