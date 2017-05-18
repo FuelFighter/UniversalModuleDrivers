@@ -20,8 +20,9 @@ void pwm_init(void){
 	DDRB |= (1<<PB4);
 	
 	//Timer 3 fast pwm, mode 14, TOP at ICR
-	TCCR3B |= (1<<WGM33)|(1<<WGM32)|(1<<WGM31);
-	TCCR3B &= ~((1<<WGM31)|(1<<WGM30));
+	TCCR3B |= (1<<WGM33)|(1<<WGM32);
+	TCCR3A |= (1<<WGM31);
+	TCCR3A &= ~(1<<WGM30);
 	
 	//Timer 2 fast pwm, mode 3, Top at 0xFF
 	TCCR2A |= (1<<WGM21)|(1<<WGM20);
@@ -43,10 +44,10 @@ void pwm_init(void){
 	ICR3 = 0xFF;
 	
 	//Set off 
-	OCR3A = 0x0000;
-	OCR3B = 0x0000;
-	OCR3C = 0x0000;
-	OCR2A = 0x0000;	
+	OCR3A = 0;
+	OCR3B = 0;
+	OCR3C = 0;
+	OCR2A = 0;	
 }
 
 void pwm_set_duty_cycle(pwmPin_t pin, uint16_t dutyCycle)
@@ -94,7 +95,7 @@ void pwm_set_prescale(pwmPrescale_t scale, pwmTimer_t timer)
 				TCCR2A |= ~((1<<CS20));
 			} else if(timer == PWM_T3) {
 				TCCR3B &= ~((1<<CS32)|(1<<CS31));
-				TCCR3B |= ~((1<<CS30));
+				TCCR3B |= (1<<CS30);
 			} 
 			break;
 		case SCALE_8:
@@ -104,50 +105,50 @@ void pwm_set_prescale(pwmPrescale_t scale, pwmTimer_t timer)
 				TCCR2A |= ~((1<<CS21));
 			} else if(timer == PWM_T3) {
 				TCCR3B &= ~((1<<CS32)|(1<<CS30));
-				TCCR3B |= ~((1<<CS31));
+				TCCR3B |= (1<<CS31);
 			}
 			break;
 		case SCALE_32_T2_ONLY:
 			if (timer == PWM_T2)
 			{
 				TCCR2A &= ~((1<<CS22));
-				TCCR2A |= ~((1<<CS21)|(1<<CS20));
+				TCCR2A |= (1<<CS21)|(1<<CS20);
 			} 
 			break;
 		case SCALE_64:
 			if (timer == PWM_T2)
 			{
 				TCCR2A &= ~((1<<CS21)|(1<<CS20));
-				TCCR2A |= ~((1<<CS22));
+				TCCR2A |= (1<<CS22);
 			} else if(timer == PWM_T3) {
 				TCCR3B &= ~((1<<CS32));
-				TCCR3B |= ~((1<<CS30)|(1<<CS31));
+				TCCR3B |= (1<<CS30)|(1<<CS31);
 			}
 			break;
 		case SCALE_128_T2_ONLY:
 			if (timer == PWM_T2)
 			{
 				TCCR2A &= ~((1<<CS21));
-				TCCR2A |= ~((1<<CS22)|(1<<CS20));
+				TCCR2A |= (1<<CS22)|(1<<CS20);
 			} 
 			break;
 		case SCALE_256:
 			if (timer == PWM_T2)
 			{
 				TCCR2A &= ~((1<<CS20));
-				TCCR2A |= ~((1<<CS22)|(1<<CS21));
+				TCCR2A |= (1<<CS22)|(1<<CS21);
 			} else if(timer == PWM_T3) {
 				TCCR3B &= ~((1<<CS31)|(1<<CS30));
-				TCCR3B |= ~((1<<CS32));
+				TCCR3B |= (1<<CS32);
 			}
 			break;
 		case SCALE_1024:
 			if (timer == PWM_T2)
 			{
-				TCCR2A |= ~((1<<CS22)|(1<<CS21)|(1<<CS20));
+				TCCR2A |= (1<<CS22)|(1<<CS21)|(1<<CS20);
 			} else if(timer == PWM_T3) {
 				TCCR3B &= ~((1<<CS31));
-				TCCR3B |= ~((1<<CS32)|(1<<CS30));
+				TCCR3B |= (1<<CS32)|(1<<CS30);
 			}
 			break;
 		default:
