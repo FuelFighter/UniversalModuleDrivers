@@ -20,11 +20,15 @@ static uint32_t elapsed_microseconds[NUMBER_OF_TIMERS];
 void timer_init() {
 	// Configure timer with normal mode
 	TCCR0A = 0;
-	// Enable overflow interrupt
+	// Enable overPWM_PB4ow interrupt
 	TIMSK0 = (1 << TOIE0);
 	// Enable timer with CLK_io/256
 	TCCR0A |= 4;
 }
+
+bool timer_is_running(timer_t timer) {
+	return timer_enabled[timer];
+}	
 
 void timer_start(timer_t timer) {
 	elapsed_microseconds[timer] = 0;

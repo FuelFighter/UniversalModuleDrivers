@@ -29,8 +29,8 @@ void pwm_init(void){
 	
 
 	// Set low on compare match for 3A&B
-	TCCR3A |= (1<<COM3A1)|(1<<COM3B1);
-	TCCR3A &= ~((1<<COM3A0)|(1<<COM3B0));
+	TCCR3A |= (1<<COM3A1)|(1<<COM3B1)|(1<<COM3C1);
+	TCCR3A &= ~((1<<COM3A0)|(1<<COM3B0)|(1<<COM3C0));
 	
 	TCCR2A |= (1<<COM2A1);
 	TCCR2A &=  ~((1<<COM2A0));
@@ -55,15 +55,43 @@ void pwm_set_duty_cycle(pwmPin_t pin, uint16_t dutyCycle)
 	switch (pin)
 	{
 		case PWM_PB4:
-			OCR2A = (dutyCycle & 0xFF);
+			if (dutyCycle == 0)
+			{
+				TCCR2A &= ~((1 << WGM21)|(1 << WGM20));
+				PORTB &= ~(1 << PB4);	
+			} else {
+				TCCR2A |= (1 << WGM21)|(1 << WGM20);
+			}
+			OCR2A = (dutyCycle & 0xFF);	
 			break;
 		case PWM_PE3:
+			if (dutyCycle == 0)
+			{
+				TCCR3A &= ~((1 << COM3A1)|(1 << COM3A0));
+				PORTE &= ~(1 << PE3);
+			} else {
+				TCCR3A |= (1 << COM3A1)|(1 << COM3A0);
+			}
 			OCR3A = (dutyCycle & 0xFFFF);
 			break;
 		case PWM_PE4:
+			if (dutyCycle == 0)
+			{
+				TCCR3A &= ~((1 << COM3B1)|(1 << COM3B0));
+				PORTE &= ~(1 << PE4);
+			} else {
+				TCCR3A |= (1 << COM3B1)|(1 << COM3B0);
+			}
 			OCR3B = (dutyCycle & 0xFFFF);
 			break;
 		case PWM_PE5:
+			if (dutyCycle == 0)
+			{
+				TCCR3A &= ~((1 << COM3C1)|(1 << COM3C0));
+				PORTE &= ~(1 << PE5);
+				} else {
+				TCCR3A |= (1 << COM3C1)|(1 << COM3C0);
+			}
 			OCR3C = (dutyCycle & 0xFFFF);
 		default:
 			break;

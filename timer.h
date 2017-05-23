@@ -10,6 +10,7 @@
 #define TIMER_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef enum {
 	TIMER0 = 0,
@@ -23,6 +24,8 @@ typedef enum {
 } timer_t;
 
 void timer_init();
+
+bool timer_is_running(timer_t timer);
 
 void timer_start(timer_t timer);
 

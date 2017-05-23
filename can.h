@@ -40,7 +40,7 @@ typedef union {
 	uint64_t u64;
 	int64_t i64;
 	
-	// Floating point numbers
+	// floating point numbers
 	// Example: can_message.data.f32[1] = 3.1415926535;
 	float f32[2];
 	double f64;
