@@ -11,11 +11,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define F_CPU 8000000UL
-#define PRESCALE 8
-#define FREQ 10000
-#define COMPARE_VAL (F_CPU/(PRESCALE*FREQ))-1
-#define MICROSECOND_INCREMENT (1/FREQ)*1000000
+#define F_CPU 8000000UL	
+#define PRESCALE 8				//Divide clock by this value
+#define FREQ 10000				//Increment frequency
+#define COMPARE_VAL (F_CPU/(PRESCALE*FREQ))-1	//Compare value for chosen frequency
+#define MICROSECOND_INCREMENT 1000000/FREQ	//Increment in microseconds used every interrupt
 
 #define NUMBER_OF_TIMERS 8
 
