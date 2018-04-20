@@ -46,8 +46,13 @@ typedef enum {
 } adc_channel_t;
 
 
+// single mode
 void adc_init(void);
-
 uint16_t adc_read(adc_channel_t channel);
+
+//Free running mode
+void adc_Free_running_init(void);
+uint16_t adc_Free_running_read(adc_channel_t channel);
+void Set_ADC_Channel(adc_channel_t channel);
 
 #endif /* ADC_H_ */
