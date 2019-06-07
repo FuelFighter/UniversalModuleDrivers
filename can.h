@@ -3,7 +3,7 @@
  *
  * Created: 18/03/17 13:12:17
  *  Author: Sondre
- */ 
+ */
 
 
 #ifndef CAN_H_
@@ -12,20 +12,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define E_CLUTCH_1_CAN_ID		0x120
-#define E_CLUTCH_2_CAN_ID		0x220
-#define DASHBOARD_CAN_ID		0x230
-#define MOTOR_1_STATUS_CAN_ID	0x250
-#define MOTOR_1_CL_CMD_CAN_ID	0x251
-#define MOTOR_2_STATUS_CAN_ID	0x260
-#define MOTOR_2_CL_CMD_CAN_ID	0x261
-#define BMS_CELL_V_1_4_CAN_ID	0x440
-#define BMS_CELL_V_5_7_CAN_ID	0x441
+#define E_CLUTCH_1_CAN_ID				0x120
+#define E_CLUTCH_2_CAN_ID				0x220
+#define STEERING_WHEEL_CAN_ID		0x230
+#define DASHBOARD_CAN_ID				0x270
+#define MOTOR_1_STATUS_CAN_ID		0x250
+#define MOTOR_1_CL_CMD_CAN_ID		0x251
+#define MOTOR_2_STATUS_CAN_ID		0x260
+#define MOTOR_2_CL_CMD_CAN_ID		0x261
+#define BMS_CELL_V_1_4_CAN_ID		0x440
+#define BMS_CELL_V_5_7_CAN_ID		0x441
 #define BMS_CELL_V_8_12_CAN_ID	0x442
-#define BMS_CELL_TEMP_CAN_ID	0x443
+#define BMS_CELL_TEMP_CAN_ID		0x443
 #define BMS_VOLT_CURRENT_CAN_ID 0x444
-#define BMS_STATUS_CAN_ID		0x448
-#define BMS_ERROR_CAN_ID		0x449
+#define BMS_STATUS_CAN_ID				0x448
+#define BMS_ERROR_CAN_ID				0x449
 
 typedef union {
 	// Integers and fixed point numbers
@@ -38,7 +39,7 @@ typedef union {
 	int32_t i32[2];
 	uint64_t u64;
 	int64_t i64;
-	
+
 	// Floating point numbers
 	// Example: can_message.data.f32[1] = 3.1415926535;
 	float f32[2];
