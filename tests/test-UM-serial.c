@@ -35,16 +35,12 @@ int main(void)
 	message.data.u8[1] = 0xbb;
 	
 	DDRB = (1<<DDB7)|(1<<DDB6)|(1<<DDB5); // define the direction
-	//can_send_message(&message);
 	uart_init(BAUD_500000,DISABLED); //initialize the UART port there are two arguments one for each UART where you define the baud rate or disable if you don't want to use it
-	//can_uart_init(UART_BOTH);
-	//can_read_message_if_new(&message);
 
 	unsigned char c[8] = "Hello\n"; // test string
 		sei();
 
 	while (1){
-			//can_to_uart(&message);
 			
 			
 			uart_transmit_str( UART0_USB, &c ); // this function sends a string over the UART port
