@@ -24,7 +24,7 @@ int main(void)
 {
     /* Replace with your application code */
 	
-	DDRB = (1<<DDB7)|(1<<DDB6)|(1<<DDB5); // define the direction
+	DDRB = (1<<DDB7)|(1<<DDB6)|(1<<DDB5); // define the direction in this case the pins are outputs and can output voltage
 
     while (1) 
     {
